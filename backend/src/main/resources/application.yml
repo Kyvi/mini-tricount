@@ -1,0 +1,16 @@
+spring:
+  application:
+    name: minitricount
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:minitricount}
+    username: ${DB_USER:minitricount}
+    password: ${DB_PASSWORD:minitricount}
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    enabled: true
+
+server:
+  port: ${SERVER_PORT:8080}
