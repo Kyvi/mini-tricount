@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { ApiHttpError, fetchExpenses, fetchGroup, fetchParticipants } from '../api/groups';
 import type { Expense, Group, Participant } from '../types/api';
+import { ExpenseForm } from './ExpenseForm';
 import { ExpenseList } from './ExpenseList';
 
 interface GroupViewProps {
@@ -15,6 +16,7 @@ type ViewState =
 
 export function GroupView({ groupId }: GroupViewProps) {
   const [state, setState] = useState<ViewState>({ status: 'loading' });
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   useEffect(() => {
     let ignore = false;
@@ -66,6 +68,23 @@ export function GroupView({ groupId }: GroupViewProps) {
         </ul>
       )}
       <h2>Dépenses</h2>
+      {isFormOpen ? (
+        <ExpenseForm
+          groupId={groupId}
+          participants={participants}
+          onCreated={(expense) => {
+            setState((prev) =>
+              prev.status === 'ready' ? { ...prev, expenses: [...prev.expenses, expense] } : prev,
+            );
+            setIsFormOpen(false);
+          }}
+          onCancel={() => setIsFormOpen(false)}
+        />
+      ) : (
+        <button type="button" onClick={() => setIsFormOpen(true)}>
+          Ajouter une dépense
+        </button>
+      )}
       <ExpenseList expenses={expenses} />
     </section>
   );

@@ -31,3 +31,11 @@ export interface Expense {
   paidBy: Participant;
   shares: ExpenseShare[];
 }
+
+export interface CreateExpenseRequest {
+  description: string;
+  amount: number;
+  expenseDate: string;
+  paidByParticipantId: number;
+  beneficiaryParticipantIds: number[];
+}

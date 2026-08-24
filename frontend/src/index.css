@@ -6,3 +6,33 @@
 body {
   margin: 2rem;
 }
+
+.expense-form {
+  border: 1px solid light-dark(#ccc, #444);
+  border-radius: 4px;
+  padding: 1rem;
+  max-width: 24rem;
+  margin-block: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0.75rem;
+}
+
+.field-error {
+  color: light-dark(#b3261e, #ff8a80);
+  font-size: 0.875rem;
+  margin: 0.25rem 0 0;
+}
+
+.form-error {
+  color: light-dark(#b3261e, #ff8a80);
+  margin: 0 0 1rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
