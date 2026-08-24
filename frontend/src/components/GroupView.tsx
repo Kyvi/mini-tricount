@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { ApiHttpError, fetchGroup, fetchParticipants } from '../api/groups';
-import type { Group, Participant } from '../types/api';
+import { ApiHttpError, fetchExpenses, fetchGroup, fetchParticipants } from '../api/groups';
+import type { Expense, Group, Participant } from '../types/api';
+import { ExpenseList } from './ExpenseList';
 
 interface GroupViewProps {
   groupId: number;
@@ -10,7 +11,7 @@ type ViewState =
   | { status: 'loading' }
   | { status: 'not-found' }
   | { status: 'error' }
-  | { status: 'ready'; group: Group; participants: Participant[] };
+  | { status: 'ready'; group: Group; participants: Participant[]; expenses: Expense[] };
 
 export function GroupView({ groupId }: GroupViewProps) {
   const [state, setState] = useState<ViewState>({ status: 'loading' });
@@ -18,10 +19,10 @@ export function GroupView({ groupId }: GroupViewProps) {
   useEffect(() => {
     let ignore = false;
 
-    Promise.all([fetchGroup(groupId), fetchParticipants(groupId)])
-      .then(([group, participants]) => {
+    Promise.all([fetchGroup(groupId), fetchParticipants(groupId), fetchExpenses(groupId)])
+      .then(([group, participants, expenses]) => {
         if (ignore) return;
-        setState({ status: 'ready', group, participants });
+        setState({ status: 'ready', group, participants, expenses });
       })
       .catch((error: unknown) => {
         if (ignore) return;
@@ -49,11 +50,12 @@ export function GroupView({ groupId }: GroupViewProps) {
     return <p>Une erreur est survenue</p>;
   }
 
-  const { group, participants } = state;
+  const { group, participants, expenses } = state;
 
   return (
     <section>
       <h1>{group.name}</h1>
+      <h2>Participants</h2>
       {participants.length === 0 ? (
         <p>Aucun participant</p>
       ) : (
@@ -63,6 +65,8 @@ export function GroupView({ groupId }: GroupViewProps) {
           ))}
         </ul>
       )}
+      <h2>Dépenses</h2>
+      <ExpenseList expenses={expenses} />
     </section>
   );
 }
