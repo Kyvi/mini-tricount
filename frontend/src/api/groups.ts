@@ -1,4 +1,4 @@
-import type { ApiError, Group, Participant } from '../types/api';
+import type { ApiError, Expense, Group, Participant } from '../types/api';
 
 export class ApiHttpError extends Error {
   readonly status: number;
@@ -22,3 +22,6 @@ export const fetchGroup = (groupId: number) => apiGet<Group>(`/groups/${groupId}
 
 export const fetchParticipants = (groupId: number) =>
   apiGet<Participant[]>(`/groups/${groupId}/participants`);
+
+export const fetchExpenses = (groupId: number) =>
+  apiGet<Expense[]>(`/groups/${groupId}/expenses`);

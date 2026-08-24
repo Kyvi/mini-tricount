@@ -15,3 +15,19 @@ export interface ApiError {
   timestamp: string;
   fieldErrors: Record<string, string>;
 }
+
+export interface ExpenseShare {
+  participantId: number;
+  participantName: string;
+  shareAmount: number;
+}
+
+export interface Expense {
+  id: number;
+  description: string;
+  amount: number;
+  expenseDate: string;
+  createdAt: string;
+  paidBy: Participant;
+  shares: ExpenseShare[];
+}
