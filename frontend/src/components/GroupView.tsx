@@ -3,6 +3,7 @@ import { ApiHttpError, fetchExpenses, fetchGroup, fetchParticipants } from '../a
 import type { Expense, Group, Participant } from '../types/api';
 import { ExpenseForm } from './ExpenseForm';
 import { ExpenseList } from './ExpenseList';
+import { ParticipantForm } from './ParticipantForm';
 
 interface GroupViewProps {
   groupId: number;
@@ -14,9 +15,11 @@ type ViewState =
   | { status: 'error' }
   | { status: 'ready'; group: Group; participants: Participant[]; expenses: Expense[] };
 
+type OpenForm = 'expense' | 'participant' | null;
+
 export function GroupView({ groupId }: GroupViewProps) {
   const [state, setState] = useState<ViewState>({ status: 'loading' });
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [openForm, setOpenForm] = useState<OpenForm>(null);
 
   useEffect(() => {
     let ignore = false;
@@ -67,8 +70,26 @@ export function GroupView({ groupId }: GroupViewProps) {
           ))}
         </ul>
       )}
+      {openForm === 'participant' ? (
+        <ParticipantForm
+          groupId={groupId}
+          onCreated={(participant) => {
+            setState((prev) =>
+              prev.status === 'ready'
+                ? { ...prev, participants: [...prev.participants, participant] }
+                : prev,
+            );
+            setOpenForm(null);
+          }}
+          onCancel={() => setOpenForm(null)}
+        />
+      ) : (
+        <button type="button" onClick={() => setOpenForm('participant')}>
+          Ajouter un participant
+        </button>
+      )}
       <h2>Dépenses</h2>
-      {isFormOpen ? (
+      {openForm === 'expense' ? (
         <ExpenseForm
           groupId={groupId}
           participants={participants}
@@ -76,12 +97,12 @@ export function GroupView({ groupId }: GroupViewProps) {
             setState((prev) =>
               prev.status === 'ready' ? { ...prev, expenses: [...prev.expenses, expense] } : prev,
             );
-            setIsFormOpen(false);
+            setOpenForm(null);
           }}
-          onCancel={() => setIsFormOpen(false)}
+          onCancel={() => setOpenForm(null)}
         />
       ) : (
-        <button type="button" onClick={() => setIsFormOpen(true)}>
+        <button type="button" onClick={() => setOpenForm('expense')}>
           Ajouter une dépense
         </button>
       )}
