@@ -138,18 +138,18 @@ export function GroupView({ groupId, onBack }: GroupViewProps) {
         <button
           type="button"
           className="group-tab"
-          aria-current={activeTab === 'expenses' ? 'page' : undefined}
-          onClick={() => handleTabChange('expenses')}
-        >
-          Dépenses
-        </button>
-        <button
-          type="button"
-          className="group-tab"
           aria-current={activeTab === 'participants' ? 'page' : undefined}
           onClick={() => handleTabChange('participants')}
         >
           Participants
+        </button>
+        <button
+          type="button"
+          className="group-tab"
+          aria-current={activeTab === 'expenses' ? 'page' : undefined}
+          onClick={() => handleTabChange('expenses')}
+        >
+          Dépenses
         </button>
         <button
           type="button"
