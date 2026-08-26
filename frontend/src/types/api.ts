@@ -43,3 +43,17 @@ export interface CreateExpenseRequest {
 export interface CreateParticipantRequest {
   name: string;
 }
+
+export interface ParticipantBalance {
+  participantId: number;
+  participantName: string;
+  balance: number;
+}
+
+export interface Settlement {
+  fromParticipantId: number;
+  fromParticipantName: string;
+  toParticipantId: number;
+  toParticipantName: string;
+  amount: number;
+}

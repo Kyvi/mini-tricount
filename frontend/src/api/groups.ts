@@ -5,6 +5,8 @@ import type {
   Expense,
   Group,
   Participant,
+  ParticipantBalance,
+  Settlement,
 } from '../types/api';
 
 export class ApiHttpError extends Error {
@@ -77,3 +79,9 @@ export const updateExpense = (groupId: number, expenseId: number, payload: Creat
 
 export const deleteExpense = (groupId: number, expenseId: number) =>
   request<void>(`/groups/${groupId}/expenses/${expenseId}`, { method: 'DELETE' });
+
+export const fetchBalances = (groupId: number) =>
+  apiGet<ParticipantBalance[]>(`/groups/${groupId}/balances`);
+
+export const fetchSettlements = (groupId: number) =>
+  apiGet<Settlement[]>(`/groups/${groupId}/settlements`);

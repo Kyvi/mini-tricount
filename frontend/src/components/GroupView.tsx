@@ -1,9 +1,18 @@
-import { useEffect, useState } from 'react';
-import { ApiHttpError, fetchExpenses, fetchGroup, fetchParticipants } from '../api/groups';
-import type { Expense, Group, Participant } from '../types/api';
+import { useEffect, useRef, useState } from 'react';
+import {
+  ApiHttpError,
+  fetchBalances,
+  fetchExpenses,
+  fetchGroup,
+  fetchParticipants,
+  fetchSettlements,
+} from '../api/groups';
+import type { Expense, Group, Participant, ParticipantBalance, Settlement } from '../types/api';
+import { BalanceList } from './BalanceList';
 import { ExpenseForm } from './ExpenseForm';
 import { ExpenseList } from './ExpenseList';
 import { ParticipantForm } from './ParticipantForm';
+import { SettlementList } from './SettlementList';
 
 interface GroupViewProps {
   groupId: number;
@@ -13,7 +22,15 @@ type ViewState =
   | { status: 'loading' }
   | { status: 'not-found' }
   | { status: 'error' }
-  | { status: 'ready'; group: Group; participants: Participant[]; expenses: Expense[] };
+  | {
+      status: 'ready';
+      group: Group;
+      participants: Participant[];
+      expenses: Expense[];
+      balances: ParticipantBalance[];
+      settlements: Settlement[];
+      financialRefreshError: string | null;
+    };
 
 type OpenForm =
   | { type: 'none' }
@@ -24,14 +41,29 @@ type OpenForm =
 export function GroupView({ groupId }: GroupViewProps) {
   const [state, setState] = useState<ViewState>({ status: 'loading' });
   const [openForm, setOpenForm] = useState<OpenForm>({ type: 'none' });
+  const financialsRequestId = useRef(0);
 
   useEffect(() => {
     let ignore = false;
 
-    Promise.all([fetchGroup(groupId), fetchParticipants(groupId), fetchExpenses(groupId)])
-      .then(([group, participants, expenses]) => {
+    Promise.all([
+      fetchGroup(groupId),
+      fetchParticipants(groupId),
+      fetchExpenses(groupId),
+      fetchBalances(groupId),
+      fetchSettlements(groupId),
+    ])
+      .then(([group, participants, expenses, balances, settlements]) => {
         if (ignore) return;
-        setState({ status: 'ready', group, participants, expenses });
+        setState({
+          status: 'ready',
+          group,
+          participants,
+          expenses,
+          balances,
+          settlements,
+          financialRefreshError: null,
+        });
       })
       .catch((error: unknown) => {
         if (ignore) return;
@@ -47,6 +79,27 @@ export function GroupView({ groupId }: GroupViewProps) {
     };
   }, [groupId]);
 
+  async function refreshFinancials() {
+    const requestId = ++financialsRequestId.current;
+    try {
+      const [balances, settlements] = await Promise.all([
+        fetchBalances(groupId),
+        fetchSettlements(groupId),
+      ]);
+      if (requestId !== financialsRequestId.current) return;
+      setState((prev) =>
+        prev.status === 'ready' ? { ...prev, balances, settlements, financialRefreshError: null } : prev,
+      );
+    } catch {
+      if (requestId !== financialsRequestId.current) return;
+      setState((prev) =>
+        prev.status === 'ready'
+          ? { ...prev, financialRefreshError: "Impossible d'actualiser les balances et remboursements." }
+          : prev,
+      );
+    }
+  }
+
   if (state.status === 'loading') {
     return <p>Chargement…</p>;
   }
@@ -59,7 +112,7 @@ export function GroupView({ groupId }: GroupViewProps) {
     return <p>Une erreur est survenue</p>;
   }
 
-  const { group, participants, expenses } = state;
+  const { group, participants, expenses, balances, settlements, financialRefreshError } = state;
   const editingExpenseId = openForm.type === 'edit-expense' ? openForm.expenseId : null;
 
   return (
@@ -85,6 +138,7 @@ export function GroupView({ groupId }: GroupViewProps) {
                 : prev,
             );
             setOpenForm({ type: 'none' });
+            void refreshFinancials();
           }}
           onCancel={() => setOpenForm({ type: 'none' })}
         />
@@ -103,6 +157,7 @@ export function GroupView({ groupId }: GroupViewProps) {
               prev.status === 'ready' ? { ...prev, expenses: [...prev.expenses, expense] } : prev,
             );
             setOpenForm({ type: 'none' });
+            void refreshFinancials();
           }}
           onCancel={() => setOpenForm({ type: 'none' })}
         />
@@ -124,6 +179,7 @@ export function GroupView({ groupId }: GroupViewProps) {
               : prev,
           );
           setOpenForm({ type: 'none' });
+          void refreshFinancials();
         }}
         onEditCancelled={() => setOpenForm({ type: 'none' })}
         onDeleted={(expenseId) => {
@@ -132,8 +188,14 @@ export function GroupView({ groupId }: GroupViewProps) {
               ? { ...prev, expenses: prev.expenses.filter((e) => e.id !== expenseId) }
               : prev,
           );
+          void refreshFinancials();
         }}
       />
+      <h2>Balances</h2>
+      {financialRefreshError && <p className="form-error">{financialRefreshError}</p>}
+      <BalanceList balances={balances} />
+      <h2>Remboursements</h2>
+      <SettlementList settlements={settlements} />
     </section>
   );
 }
