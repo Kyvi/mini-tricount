@@ -45,11 +45,11 @@ export function ExpenseList({
   }
 
   if (expenses.length === 0) {
-    return <p>Aucune dépense</p>;
+    return <p className="empty-message">Aucune dépense</p>;
   }
 
   return (
-    <ul>
+    <ul className="expense-list" role="list">
       {expenses.map((expense) => (
         <li key={expense.id}>
           {editingExpenseId === expense.id ? (
@@ -61,12 +61,15 @@ export function ExpenseList({
               onCancel={onEditCancelled}
             />
           ) : (
-            <>
-              <p>
-                {expense.description} — {expense.amount.toFixed(2)} € — {expense.expenseDate} — payé par{' '}
-                {expense.paidBy.name}
+            <div className="expense-card">
+              <div className="expense-summary">
+                <span className="expense-description">{expense.description}</span>
+                <span className="expense-amount">{expense.amount.toFixed(2)} €</span>
+              </div>
+              <p className="expense-meta">
+                {expense.expenseDate} — payé par {expense.paidBy.name}
               </p>
-              <ul>
+              <ul className="expense-shares" role="list">
                 {expense.shares.map((share) => (
                   <li key={share.participantId}>
                     {share.participantName} : {share.shareAmount.toFixed(2)} €
@@ -76,6 +79,7 @@ export function ExpenseList({
               <div className="actions">
                 <button
                   type="button"
+                  className="btn btn-secondary"
                   onClick={() => onEditRequested(expense.id)}
                   disabled={deletingId === expense.id}
                 >
@@ -83,6 +87,7 @@ export function ExpenseList({
                 </button>
                 <button
                   type="button"
+                  className="btn btn-danger"
                   onClick={() => handleDelete(expense)}
                   disabled={deletingId === expense.id}
                 >
@@ -92,7 +97,7 @@ export function ExpenseList({
               {deleteError?.expenseId === expense.id && (
                 <p className="field-error">{deleteError.message}</p>
               )}
-            </>
+            </div>
           )}
         </li>
       ))}

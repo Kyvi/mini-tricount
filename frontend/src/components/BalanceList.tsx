@@ -10,15 +10,21 @@ function qualifierFor(balance: number): string {
   return 'équilibré';
 }
 
+function signClassFor(balance: number): string {
+  if (balance > 0) return 'balance-positive';
+  if (balance < 0) return 'balance-negative';
+  return 'balance-zero';
+}
+
 export function BalanceList({ balances }: BalanceListProps) {
   if (balances.length === 0) {
-    return <p>Aucune balance à afficher</p>;
+    return <p className="empty-message">Aucune balance à afficher</p>;
   }
 
   return (
-    <ul>
+    <ul className="balance-list" role="list">
       {balances.map((balance) => (
-        <li key={balance.participantId}>
+        <li key={balance.participantId} className={signClassFor(balance.balance)}>
           {balance.participantName} : {balance.balance.toFixed(2)} € ({qualifierFor(balance.balance)})
         </li>
       ))}

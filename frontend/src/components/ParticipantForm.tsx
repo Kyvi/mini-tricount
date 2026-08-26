@@ -79,10 +79,10 @@ export function ParticipantForm({ groupId, onCreated, onCancel }: ParticipantFor
       </div>
 
       <div className="actions">
-        <button type="submit" disabled={isSubmitting}>
+        <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
           {isSubmitting ? 'Enregistrement…' : 'Enregistrer'}
         </button>
-        <button type="button" onClick={onCancel} disabled={isSubmitting}>
+        <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={isSubmitting}>
           Annuler
         </button>
       </div>

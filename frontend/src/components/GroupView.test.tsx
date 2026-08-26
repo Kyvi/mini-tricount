@@ -68,7 +68,9 @@ describe('GroupView', () => {
     await user.selectOptions(screen.getByLabelText('Payeur'), '1');
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
 
-    await screen.findByText('Restaurant — 30.00 € — 2026-08-26 — payé par Alice');
+    await screen.findByText('Restaurant');
+    expect(screen.getByText('30.00 €')).toBeInTheDocument();
+    expect(screen.getByText('2026-08-26 — payé par Alice')).toBeInTheDocument();
 
     expect(fetchBalances).toHaveBeenCalledTimes(2);
     expect(fetchSettlements).toHaveBeenCalledTimes(2);
