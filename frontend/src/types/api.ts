@@ -39,3 +39,7 @@ export interface CreateExpenseRequest {
   paidByParticipantId: number;
   beneficiaryParticipantIds: number[];
 }
+
+export interface CreateParticipantRequest {
+  name: string;
+}

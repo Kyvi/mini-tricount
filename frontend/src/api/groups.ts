@@ -1,4 +1,11 @@
-import type { ApiError, CreateExpenseRequest, Expense, Group, Participant } from '../types/api';
+import type {
+  ApiError,
+  CreateExpenseRequest,
+  CreateParticipantRequest,
+  Expense,
+  Group,
+  Participant,
+} from '../types/api';
 
 export class ApiHttpError extends Error {
   readonly status: number;
@@ -50,3 +57,6 @@ export const fetchExpenses = (groupId: number) =>
 
 export const createExpense = (groupId: number, payload: CreateExpenseRequest) =>
   apiPost<Expense>(`/groups/${groupId}/expenses`, payload);
+
+export const createParticipant = (groupId: number, payload: CreateParticipantRequest) =>
+  apiPost<Participant>(`/groups/${groupId}/participants`, payload);

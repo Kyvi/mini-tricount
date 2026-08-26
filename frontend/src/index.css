@@ -7,7 +7,7 @@ body {
   margin: 2rem;
 }
 
-.expense-form {
+.form-card {
   border: 1px solid light-dark(#ccc, #444);
   border-radius: 4px;
   padding: 1rem;

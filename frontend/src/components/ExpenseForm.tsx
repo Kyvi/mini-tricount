@@ -97,7 +97,7 @@ export function ExpenseForm({ groupId, participants, onCreated, onCancel }: Expe
   const fieldErrors = submitState.status === 'error' ? submitState.fieldErrors : {};
 
   return (
-    <form className="expense-form" onSubmit={handleSubmit}>
+    <form className="form-card" onSubmit={handleSubmit}>
       {submitState.status === 'error' && <p className="form-error">{submitState.message}</p>}
 
       <div className="field">
