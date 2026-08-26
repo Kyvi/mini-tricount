@@ -218,6 +218,40 @@ fieldset.field > label {
   flex-wrap: wrap;
 }
 
+/* ---------- Onglets de groupe ---------- */
+.group-tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.group-tab {
+  flex: 1;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: var(--space-3) var(--space-2);
+  font: inherit;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  min-height: 2.25rem;
+}
+
+.group-tab:hover {
+  color: var(--color-text);
+}
+
+.group-tab[aria-current='page'] {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+.group-tab:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+
 /* ---------- Groupes ---------- */
 .group-list {
   display: flex;
@@ -356,5 +390,10 @@ fieldset.field > label {
   .expense-summary {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .group-tab {
+    padding: var(--space-2) var(--space-1);
+    font-size: var(--font-size-sm);
   }
 }

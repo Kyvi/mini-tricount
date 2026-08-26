@@ -39,10 +39,19 @@ type OpenForm =
   | { type: 'create-participant' }
   | { type: 'edit-expense'; expenseId: number };
 
+type GroupTab = 'expenses' | 'participants' | 'balances';
+
 export function GroupView({ groupId, onBack }: GroupViewProps) {
   const [state, setState] = useState<ViewState>({ status: 'loading' });
   const [openForm, setOpenForm] = useState<OpenForm>({ type: 'none' });
+  const [activeTab, setActiveTab] = useState<GroupTab>('expenses');
   const financialsRequestId = useRef(0);
+
+  function handleTabChange(tab: GroupTab) {
+    if (tab === activeTab) return;
+    setActiveTab(tab);
+    setOpenForm({ type: 'none' });
+  }
 
   useEffect(() => {
     let ignore = false;
@@ -125,6 +134,34 @@ export function GroupView({ groupId, onBack }: GroupViewProps) {
       )}
       <h1>{group.name}</h1>
 
+      <nav className="group-tabs" aria-label="Sections du groupe">
+        <button
+          type="button"
+          className="group-tab"
+          aria-current={activeTab === 'expenses' ? 'page' : undefined}
+          onClick={() => handleTabChange('expenses')}
+        >
+          Dépenses
+        </button>
+        <button
+          type="button"
+          className="group-tab"
+          aria-current={activeTab === 'participants' ? 'page' : undefined}
+          onClick={() => handleTabChange('participants')}
+        >
+          Participants
+        </button>
+        <button
+          type="button"
+          className="group-tab"
+          aria-current={activeTab === 'balances' ? 'page' : undefined}
+          onClick={() => handleTabChange('balances')}
+        >
+          Balances
+        </button>
+      </nav>
+
+      {activeTab === 'participants' && (
       <section className="panel">
         <h2>Participants</h2>
         {participants.length === 0 ? (
@@ -162,7 +199,9 @@ export function GroupView({ groupId, onBack }: GroupViewProps) {
           </button>
         )}
       </section>
+      )}
 
+      {activeTab === 'expenses' && (
       <section className="panel">
         <h2>Dépenses</h2>
         {openForm.type === 'create-expense' ? (
@@ -213,17 +252,22 @@ export function GroupView({ groupId, onBack }: GroupViewProps) {
           }}
         />
       </section>
+      )}
 
-      <section className="panel">
-        <h2>Balances</h2>
-        {financialRefreshError && <p className="form-error">{financialRefreshError}</p>}
-        <BalanceList balances={balances} />
-      </section>
+      {activeTab === 'balances' && (
+        <>
+          <section className="panel">
+            <h2>Balances</h2>
+            {financialRefreshError && <p className="form-error">{financialRefreshError}</p>}
+            <BalanceList balances={balances} />
+          </section>
 
-      <section className="panel">
-        <h2>Remboursements</h2>
-        <SettlementList settlements={settlements} />
-      </section>
+          <section className="panel">
+            <h2>Remboursements</h2>
+            <SettlementList settlements={settlements} />
+          </section>
+        </>
+      )}
     </section>
   );
 }
