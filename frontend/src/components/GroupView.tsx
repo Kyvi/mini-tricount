@@ -15,11 +15,15 @@ type ViewState =
   | { status: 'error' }
   | { status: 'ready'; group: Group; participants: Participant[]; expenses: Expense[] };
 
-type OpenForm = 'expense' | 'participant' | null;
+type OpenForm =
+  | { type: 'none' }
+  | { type: 'create-expense' }
+  | { type: 'create-participant' }
+  | { type: 'edit-expense'; expenseId: number };
 
 export function GroupView({ groupId }: GroupViewProps) {
   const [state, setState] = useState<ViewState>({ status: 'loading' });
-  const [openForm, setOpenForm] = useState<OpenForm>(null);
+  const [openForm, setOpenForm] = useState<OpenForm>({ type: 'none' });
 
   useEffect(() => {
     let ignore = false;
@@ -56,6 +60,7 @@ export function GroupView({ groupId }: GroupViewProps) {
   }
 
   const { group, participants, expenses } = state;
+  const editingExpenseId = openForm.type === 'edit-expense' ? openForm.expenseId : null;
 
   return (
     <section>
@@ -70,7 +75,7 @@ export function GroupView({ groupId }: GroupViewProps) {
           ))}
         </ul>
       )}
-      {openForm === 'participant' ? (
+      {openForm.type === 'create-participant' ? (
         <ParticipantForm
           groupId={groupId}
           onCreated={(participant) => {
@@ -79,34 +84,56 @@ export function GroupView({ groupId }: GroupViewProps) {
                 ? { ...prev, participants: [...prev.participants, participant] }
                 : prev,
             );
-            setOpenForm(null);
+            setOpenForm({ type: 'none' });
           }}
-          onCancel={() => setOpenForm(null)}
+          onCancel={() => setOpenForm({ type: 'none' })}
         />
       ) : (
-        <button type="button" onClick={() => setOpenForm('participant')}>
+        <button type="button" onClick={() => setOpenForm({ type: 'create-participant' })}>
           Ajouter un participant
         </button>
       )}
       <h2>Dépenses</h2>
-      {openForm === 'expense' ? (
+      {openForm.type === 'create-expense' ? (
         <ExpenseForm
           groupId={groupId}
           participants={participants}
-          onCreated={(expense) => {
+          onSaved={(expense) => {
             setState((prev) =>
               prev.status === 'ready' ? { ...prev, expenses: [...prev.expenses, expense] } : prev,
             );
-            setOpenForm(null);
+            setOpenForm({ type: 'none' });
           }}
-          onCancel={() => setOpenForm(null)}
+          onCancel={() => setOpenForm({ type: 'none' })}
         />
       ) : (
-        <button type="button" onClick={() => setOpenForm('expense')}>
+        <button type="button" onClick={() => setOpenForm({ type: 'create-expense' })}>
           Ajouter une dépense
         </button>
       )}
-      <ExpenseList expenses={expenses} />
+      <ExpenseList
+        groupId={groupId}
+        participants={participants}
+        expenses={expenses}
+        editingExpenseId={editingExpenseId}
+        onEditRequested={(expenseId) => setOpenForm({ type: 'edit-expense', expenseId })}
+        onEditSaved={(expense) => {
+          setState((prev) =>
+            prev.status === 'ready'
+              ? { ...prev, expenses: prev.expenses.map((e) => (e.id === expense.id ? expense : e)) }
+              : prev,
+          );
+          setOpenForm({ type: 'none' });
+        }}
+        onEditCancelled={() => setOpenForm({ type: 'none' })}
+        onDeleted={(expenseId) => {
+          setState((prev) =>
+            prev.status === 'ready'
+              ? { ...prev, expenses: prev.expenses.filter((e) => e.id !== expenseId) }
+              : prev,
+          );
+        }}
+      />
     </section>
   );
 }

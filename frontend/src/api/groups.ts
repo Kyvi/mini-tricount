@@ -32,6 +32,9 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     }
     throw new ApiHttpError(response.status, message, fieldErrors);
   }
+  if (response.status === 204) {
+    return undefined as T;
+  }
   return response.json();
 }
 
@@ -42,6 +45,14 @@ async function apiGet<T>(path: string): Promise<T> {
 async function apiPost<T>(path: string, payload: unknown): Promise<T> {
   return request<T>(path, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+}
+
+async function apiPut<T>(path: string, payload: unknown): Promise<T> {
+  return request<T>(path, {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
@@ -60,3 +71,9 @@ export const createExpense = (groupId: number, payload: CreateExpenseRequest) =>
 
 export const createParticipant = (groupId: number, payload: CreateParticipantRequest) =>
   apiPost<Participant>(`/groups/${groupId}/participants`, payload);
+
+export const updateExpense = (groupId: number, expenseId: number, payload: CreateExpenseRequest) =>
+  apiPut<Expense>(`/groups/${groupId}/expenses/${expenseId}`, payload);
+
+export const deleteExpense = (groupId: number, expenseId: number) =>
+  request<void>(`/groups/${groupId}/expenses/${expenseId}`, { method: 'DELETE' });
