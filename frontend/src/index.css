@@ -1,38 +1,347 @@
+/* ---------- Tokens ---------- */
 :root {
   color-scheme: light dark;
   font: 16px/1.5 system-ui, 'Segoe UI', Roboto, sans-serif;
+
+  --color-bg: light-dark(#f4f5f7, #17181c);
+  --color-surface: light-dark(#ffffff, #23252b);
+  --color-border: light-dark(#dcdfe4, #3a3d45);
+  --color-text: light-dark(#1a1d21, #eceef0);
+  --color-text-secondary: light-dark(#5b6068, #a3a8b1);
+  --color-accent: light-dark(#2f6fed, #6d9bff);
+  --color-accent-hover: light-dark(#2558c2, #8fb2ff);
+  --color-accent-contrast: light-dark(#ffffff, #0b1220);
+  --color-positive: light-dark(#1a7f4b, #4ade80);
+  --color-negative: light-dark(#b3261e, #ff8a80);
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  --radius: 8px;
+  --radius-sm: 4px;
+
+  --font-size-sm: 0.875rem;
+  --font-size-lg: 1.125rem;
 }
 
+/* ---------- Base ---------- */
 body {
-  margin: 2rem;
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  overflow-wrap: break-word;
 }
 
+/* Listes utilisées comme cartes/chips : puces retirées visuellement, mais
+   role="list" conservé côté JSX pour préserver la sémantique de liste sur
+   les navigateurs/lecteurs d'écran qui la suppriment avec list-style: none. */
+.chip-list,
+.expense-list,
+.expense-shares,
+.balance-list,
+.settlement-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.empty-message {
+  color: var(--color-text-secondary);
+}
+
+.status-message {
+  text-align: center;
+  color: var(--color-text-secondary);
+  padding: var(--space-6) 0;
+}
+
+/* ---------- Layout ---------- */
+.page {
+  max-width: 40rem;
+  margin-inline: auto;
+  padding: var(--space-6) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+.page > h1 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.panel {
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-5);
+}
+
+.panel > h2 {
+  margin-top: 0;
+  margin-bottom: var(--space-4);
+  font-size: var(--font-size-lg);
+}
+
+/* ---------- Boutons ---------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.25rem;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.btn-primary {
+  background-color: var(--color-accent);
+  color: var(--color-accent-contrast);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--color-accent-hover);
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: var(--color-bg);
+}
+
+.btn-danger {
+  background-color: transparent;
+  border-color: var(--color-negative);
+  color: var(--color-negative);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background-color: var(--color-negative);
+  color: light-dark(#ffffff, #1a1d21);
+}
+
+.btn:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ---------- Formulaires ---------- */
 .form-card {
-  border: 1px solid light-dark(#ccc, #444);
-  border-radius: 4px;
-  padding: 1rem;
-  max-width: 24rem;
-  margin-block: 1rem;
+  background-color: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  max-width: min(24rem, 100%);
+  margin-block: var(--space-4);
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  margin-bottom: 0.75rem;
+  gap: var(--space-1);
+  margin-bottom: var(--space-3);
+}
+
+.field label[for],
+.field legend {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  padding: 0;
+}
+
+.field input[type='text'],
+.field input[type='number'],
+.field input[type='date'],
+.field select {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+fieldset.field {
+  border: none;
+  padding: 0;
+}
+
+fieldset.field > label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: var(--space-1) var(--space-2) var(--space-1) 0;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  font-size: var(--font-size-sm);
+  font-weight: 400;
+  color: var(--color-text);
+  cursor: pointer;
 }
 
 .field-error {
-  color: light-dark(#b3261e, #ff8a80);
-  font-size: 0.875rem;
-  margin: 0.25rem 0 0;
+  color: var(--color-negative);
+  font-size: var(--font-size-sm);
+  margin: 0;
 }
 
 .form-error {
-  color: light-dark(#b3261e, #ff8a80);
-  margin: 0 0 1rem;
+  color: var(--color-negative);
+  margin: 0 0 var(--space-3);
 }
 
 .actions {
   display: flex;
-  gap: 0.5rem;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+/* ---------- Participants ---------- */
+.chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: 999px;
+  background-color: var(--color-bg);
+  font-size: var(--font-size-sm);
+}
+
+/* ---------- Dépenses ---------- */
+.expense-list > li {
+  margin-bottom: var(--space-3);
+}
+
+.expense-list > li:last-child {
+  margin-bottom: 0;
+}
+
+.expense-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3) var(--space-4);
+}
+
+.expense-summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.expense-description {
+  font-weight: 600;
+  font-size: var(--font-size-lg);
+}
+
+.expense-amount {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.expense-meta {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin: var(--space-1) 0 var(--space-2);
+}
+
+.expense-shares {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin: 0 0 var(--space-3);
+  padding-left: var(--space-3);
+}
+
+.expense-card .actions {
+  margin-top: var(--space-2);
+}
+
+/* ---------- Balances ---------- */
+.balance-list > li {
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  margin-bottom: var(--space-2);
+}
+
+.balance-list > li:last-child {
+  margin-bottom: 0;
+}
+
+.balance-positive {
+  border-left-color: var(--color-positive);
+}
+
+.balance-negative {
+  border-left-color: var(--color-negative);
+}
+
+.balance-zero {
+  border-left-color: var(--color-border);
+}
+
+/* ---------- Remboursements ---------- */
+.settlement-list > li {
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: var(--color-surface);
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-lg);
+  font-weight: 500;
+}
+
+.settlement-list > li:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 560px) {
+  .page {
+    padding: var(--space-4) var(--space-3);
+    gap: var(--space-4);
+  }
+
+  .panel {
+    padding: var(--space-3);
+  }
+
+  .actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .expense-summary {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }

@@ -101,101 +101,123 @@ export function GroupView({ groupId }: GroupViewProps) {
   }
 
   if (state.status === 'loading') {
-    return <p>Chargement…</p>;
+    return <p className="status-message">Chargement…</p>;
   }
 
   if (state.status === 'not-found') {
-    return <p>Groupe introuvable</p>;
+    return <p className="status-message">Groupe introuvable</p>;
   }
 
   if (state.status === 'error') {
-    return <p>Une erreur est survenue</p>;
+    return <p className="status-message">Une erreur est survenue</p>;
   }
 
   const { group, participants, expenses, balances, settlements, financialRefreshError } = state;
   const editingExpenseId = openForm.type === 'edit-expense' ? openForm.expenseId : null;
 
   return (
-    <section>
+    <section className="page">
       <h1>{group.name}</h1>
-      <h2>Participants</h2>
-      {participants.length === 0 ? (
-        <p>Aucun participant</p>
-      ) : (
-        <ul>
-          {participants.map((participant) => (
-            <li key={participant.id}>{participant.name}</li>
-          ))}
-        </ul>
-      )}
-      {openForm.type === 'create-participant' ? (
-        <ParticipantForm
+
+      <section className="panel">
+        <h2>Participants</h2>
+        {participants.length === 0 ? (
+          <p className="empty-message">Aucun participant</p>
+        ) : (
+          <ul className="chip-list" role="list">
+            {participants.map((participant) => (
+              <li key={participant.id} className="chip">
+                {participant.name}
+              </li>
+            ))}
+          </ul>
+        )}
+        {openForm.type === 'create-participant' ? (
+          <ParticipantForm
+            groupId={groupId}
+            onCreated={(participant) => {
+              setState((prev) =>
+                prev.status === 'ready'
+                  ? { ...prev, participants: [...prev.participants, participant] }
+                  : prev,
+              );
+              setOpenForm({ type: 'none' });
+              void refreshFinancials();
+            }}
+            onCancel={() => setOpenForm({ type: 'none' })}
+          />
+        ) : (
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setOpenForm({ type: 'create-participant' })}
+          >
+            Ajouter un participant
+          </button>
+        )}
+      </section>
+
+      <section className="panel">
+        <h2>Dépenses</h2>
+        {openForm.type === 'create-expense' ? (
+          <ExpenseForm
+            groupId={groupId}
+            participants={participants}
+            onSaved={(expense) => {
+              setState((prev) =>
+                prev.status === 'ready' ? { ...prev, expenses: [...prev.expenses, expense] } : prev,
+              );
+              setOpenForm({ type: 'none' });
+              void refreshFinancials();
+            }}
+            onCancel={() => setOpenForm({ type: 'none' })}
+          />
+        ) : (
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={() => setOpenForm({ type: 'create-expense' })}
+          >
+            Ajouter une dépense
+          </button>
+        )}
+        <ExpenseList
           groupId={groupId}
-          onCreated={(participant) => {
+          participants={participants}
+          expenses={expenses}
+          editingExpenseId={editingExpenseId}
+          onEditRequested={(expenseId) => setOpenForm({ type: 'edit-expense', expenseId })}
+          onEditSaved={(expense) => {
             setState((prev) =>
               prev.status === 'ready'
-                ? { ...prev, participants: [...prev.participants, participant] }
+                ? { ...prev, expenses: prev.expenses.map((e) => (e.id === expense.id ? expense : e)) }
                 : prev,
             );
             setOpenForm({ type: 'none' });
             void refreshFinancials();
           }}
-          onCancel={() => setOpenForm({ type: 'none' })}
-        />
-      ) : (
-        <button type="button" onClick={() => setOpenForm({ type: 'create-participant' })}>
-          Ajouter un participant
-        </button>
-      )}
-      <h2>Dépenses</h2>
-      {openForm.type === 'create-expense' ? (
-        <ExpenseForm
-          groupId={groupId}
-          participants={participants}
-          onSaved={(expense) => {
+          onEditCancelled={() => setOpenForm({ type: 'none' })}
+          onDeleted={(expenseId) => {
             setState((prev) =>
-              prev.status === 'ready' ? { ...prev, expenses: [...prev.expenses, expense] } : prev,
+              prev.status === 'ready'
+                ? { ...prev, expenses: prev.expenses.filter((e) => e.id !== expenseId) }
+                : prev,
             );
-            setOpenForm({ type: 'none' });
             void refreshFinancials();
           }}
-          onCancel={() => setOpenForm({ type: 'none' })}
         />
-      ) : (
-        <button type="button" onClick={() => setOpenForm({ type: 'create-expense' })}>
-          Ajouter une dépense
-        </button>
-      )}
-      <ExpenseList
-        groupId={groupId}
-        participants={participants}
-        expenses={expenses}
-        editingExpenseId={editingExpenseId}
-        onEditRequested={(expenseId) => setOpenForm({ type: 'edit-expense', expenseId })}
-        onEditSaved={(expense) => {
-          setState((prev) =>
-            prev.status === 'ready'
-              ? { ...prev, expenses: prev.expenses.map((e) => (e.id === expense.id ? expense : e)) }
-              : prev,
-          );
-          setOpenForm({ type: 'none' });
-          void refreshFinancials();
-        }}
-        onEditCancelled={() => setOpenForm({ type: 'none' })}
-        onDeleted={(expenseId) => {
-          setState((prev) =>
-            prev.status === 'ready'
-              ? { ...prev, expenses: prev.expenses.filter((e) => e.id !== expenseId) }
-              : prev,
-          );
-          void refreshFinancials();
-        }}
-      />
-      <h2>Balances</h2>
-      {financialRefreshError && <p className="form-error">{financialRefreshError}</p>}
-      <BalanceList balances={balances} />
-      <h2>Remboursements</h2>
-      <SettlementList settlements={settlements} />
+      </section>
+
+      <section className="panel">
+        <h2>Balances</h2>
+        {financialRefreshError && <p className="form-error">{financialRefreshError}</p>}
+        <BalanceList balances={balances} />
+      </section>
+
+      <section className="panel">
+        <h2>Remboursements</h2>
+        <SettlementList settlements={settlements} />
+      </section>
     </section>
   );
 }

@@ -6,11 +6,11 @@ interface SettlementListProps {
 
 export function SettlementList({ settlements }: SettlementListProps) {
   if (settlements.length === 0) {
-    return <p>Aucun remboursement nécessaire</p>;
+    return <p className="empty-message">Aucun remboursement nécessaire</p>;
   }
 
   return (
-    <ul>
+    <ul className="settlement-list" role="list">
       {settlements.map((settlement) => (
         <li key={`${settlement.fromParticipantId}-${settlement.toParticipantId}`}>
           {settlement.fromParticipantName} → {settlement.toParticipantName} : {settlement.amount.toFixed(2)} €
