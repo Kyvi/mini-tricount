@@ -1,6 +1,7 @@
 package com.minitricount.expense;
 
 import com.minitricount.common.exception.BusinessRuleException;
+import com.minitricount.common.exception.ResourceNotFoundException;
 import com.minitricount.expense.dto.ExpenseRequest;
 import com.minitricount.group.ExpenseGroup;
 import com.minitricount.group.ExpenseGroupService;
@@ -36,20 +37,7 @@ public class ExpenseService {
     public Expense create(Long groupId, ExpenseRequest request) {
         ExpenseGroup group = expenseGroupService.findById(groupId);
 
-        Set<Long> requestedIds = new LinkedHashSet<>();
-        requestedIds.add(request.paidByParticipantId());
-        requestedIds.addAll(request.beneficiaryParticipantIds());
-
-        Map<Long, Participant> byId = participantRepository
-                .findByIdInAndExpenseGroupId(requestedIds, groupId).stream()
-                .collect(Collectors.toMap(Participant::getId, Function.identity()));
-
-        if (byId.size() != requestedIds.size()) {
-            Set<Long> missing = new LinkedHashSet<>(requestedIds);
-            missing.removeAll(byId.keySet());
-            throw new BusinessRuleException(
-                    "Participant(s) hors du groupe " + groupId + " : " + missing);
-        }
+        Map<Long, Participant> byId = resolveParticipants(groupId, requestedParticipantIds(request));
 
         Map<Long, BigDecimal> sharesByParticipantId =
                 EqualSplitCalculator.split(request.amount(), request.beneficiaryParticipantIds());
@@ -61,8 +49,65 @@ public class ExpenseService {
         return expenseRepository.save(expense);
     }
 
+    @Transactional
+    public Expense update(Long groupId, Long expenseId, ExpenseRequest request) {
+        expenseGroupService.findById(groupId);
+        Expense expense = expenseRepository.findByIdAndExpenseGroupId(expenseId, groupId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Dépense introuvable : id=" + expenseId + " dans le groupe " + groupId));
+
+        Map<Long, Participant> byId = resolveParticipants(groupId, requestedParticipantIds(request));
+
+        Map<Long, BigDecimal> sharesByParticipantId =
+                EqualSplitCalculator.split(request.amount(), request.beneficiaryParticipantIds());
+
+        expense.replaceDetails(request.description(), request.amount(), request.expenseDate(),
+                byId.get(request.paidByParticipantId()));
+        expense.clearShares();
+        // Flush intermédiaire : force l'exécution des DELETE des anciennes shares avant les INSERT
+        // des nouvelles, afin de ne pas dépendre de l'ordre implicite du flush Hibernate face à la
+        // contrainte unique (expense_id, participant_id) lorsqu'un participant reste bénéficiaire
+        // avant et après la modification.
+        expenseRepository.flush();
+        sharesByParticipantId.forEach((id, shareAmount) -> expense.addShare(byId.get(id), shareAmount));
+
+        return expense;
+    }
+
+    @Transactional
+    public void delete(Long groupId, Long expenseId) {
+        expenseGroupService.findById(groupId);
+        Expense expense = expenseRepository.findByIdAndExpenseGroupId(expenseId, groupId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Dépense introuvable : id=" + expenseId + " dans le groupe " + groupId));
+
+        expenseRepository.delete(expense);
+    }
+
     public List<Expense> findByGroup(Long groupId) {
         expenseGroupService.findById(groupId);
         return expenseRepository.findByExpenseGroupIdWithShares(groupId);
+    }
+
+    private static Set<Long> requestedParticipantIds(ExpenseRequest request) {
+        Set<Long> requestedIds = new LinkedHashSet<>();
+        requestedIds.add(request.paidByParticipantId());
+        requestedIds.addAll(request.beneficiaryParticipantIds());
+        return requestedIds;
+    }
+
+    private Map<Long, Participant> resolveParticipants(Long groupId, Set<Long> requestedIds) {
+        Map<Long, Participant> byId = participantRepository
+                .findByIdInAndExpenseGroupId(requestedIds, groupId).stream()
+                .collect(Collectors.toMap(Participant::getId, Function.identity()));
+
+        if (byId.size() != requestedIds.size()) {
+            Set<Long> missing = new LinkedHashSet<>(requestedIds);
+            missing.removeAll(byId.keySet());
+            throw new BusinessRuleException(
+                    "Participant(s) hors du groupe " + groupId + " : " + missing);
+        }
+
+        return byId;
     }
 }

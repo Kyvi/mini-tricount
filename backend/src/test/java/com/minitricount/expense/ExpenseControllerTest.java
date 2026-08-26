@@ -21,9 +21,13 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -177,6 +181,86 @@ class ExpenseControllerTest {
                         .content(objectMapper.writeValueAsString(request)))
                 .andExpect(status().isInternalServerError())
                 .andExpect(jsonPath("$.message").value("Une erreur interne est survenue"));
+    }
+
+    @Test
+    void update_returns200WithUpdatedExpense_whenValid() throws Exception {
+        ExpenseGroup group = groupWithId(1L, "Trip");
+        Participant bob = participantWithId(2L, group, "Bob");
+        Expense updated = expenseWithId(10L, group, "New description", new BigDecimal("9.00"),
+                LocalDate.of(2026, 8, 20), bob);
+        updated.addShare(bob, new BigDecimal("9.00"));
+
+        when(expenseService.update(eq(1L), eq(10L), any())).thenReturn(updated);
+
+        ExpenseRequest request = new ExpenseRequest(
+                "New description", new BigDecimal("9.00"), LocalDate.of(2026, 8, 20), 2L, List.of(2L));
+
+        mockMvc.perform(put("/api/groups/1/expenses/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.description").value("New description"))
+                .andExpect(jsonPath("$.amount").value(9.00))
+                .andExpect(jsonPath("$.paidBy.name").value("Bob"))
+                .andExpect(jsonPath("$.shares.length()").value(1));
+    }
+
+    @Test
+    void update_returns400WithFieldErrors_whenDescriptionBlank() throws Exception {
+        ExpenseRequest request = new ExpenseRequest(
+                " ", new BigDecimal("10.00"), LocalDate.now(), 1L, List.of(1L));
+
+        mockMvc.perform(put("/api/groups/1/expenses/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.description").exists());
+    }
+
+    @Test
+    void update_returns404_whenExpenseMissing() throws Exception {
+        when(expenseService.update(eq(1L), eq(99L), any()))
+                .thenThrow(new ResourceNotFoundException("Dépense introuvable : id=99 dans le groupe 1"));
+
+        ExpenseRequest request = new ExpenseRequest(
+                "Courses", new BigDecimal("10.00"), LocalDate.now(), 1L, List.of(1L));
+
+        mockMvc.perform(put("/api/groups/1/expenses/99")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void update_returns400_whenBusinessRuleViolated() throws Exception {
+        when(expenseService.update(eq(1L), eq(10L), any()))
+                .thenThrow(new BusinessRuleException("Participant(s) hors du groupe 1 : [2]"));
+
+        ExpenseRequest request = new ExpenseRequest(
+                "Courses", new BigDecimal("10.00"), LocalDate.now(), 1L, List.of(2L));
+
+        mockMvc.perform(put("/api/groups/1/expenses/10")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(request)))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void delete_returns204WithoutBody_whenValid() throws Exception {
+        mockMvc.perform(delete("/api/groups/1/expenses/10"))
+                .andExpect(status().isNoContent())
+                .andExpect(content().string(""));
+    }
+
+    @Test
+    void delete_returns404_whenExpenseMissingOrBelongsToAnotherGroup() throws Exception {
+        doThrow(new ResourceNotFoundException("Dépense introuvable : id=99 dans le groupe 1"))
+                .when(expenseService).delete(1L, 99L);
+
+        mockMvc.perform(delete("/api/groups/1/expenses/99"))
+                .andExpect(status().isNotFound());
     }
 
     @Test

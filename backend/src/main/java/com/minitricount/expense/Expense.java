@@ -75,6 +75,17 @@ public class Expense {
         shares.add(new ExpenseShare(this, participant, shareAmount));
     }
 
+    public void replaceDetails(String description, BigDecimal amount, LocalDate expenseDate, Participant paidBy) {
+        this.description = description;
+        this.amount = amount;
+        this.expenseDate = expenseDate;
+        this.paidBy = paidBy;
+    }
+
+    public void clearShares() {
+        shares.clear();
+    }
+
     public Long getId() {
         return id;
     }
