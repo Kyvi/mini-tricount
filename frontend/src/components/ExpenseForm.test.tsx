@@ -10,10 +10,11 @@ vi.mock('../api/groups', async () => {
   return {
     ...actual,
     createExpense: vi.fn(),
+    updateExpense: vi.fn(),
   };
 });
 
-import { createExpense } from '../api/groups';
+import { createExpense, updateExpense } from '../api/groups';
 
 const participants: Participant[] = [
   { id: 1, name: 'Alice' },
@@ -33,9 +34,9 @@ describe('ExpenseForm', () => {
 
   it("bloque la soumission et n'appelle pas l'API si aucun bénéficiaire n'est coché", async () => {
     const user = userEvent.setup();
-    const onCreated = vi.fn();
+    const onSaved = vi.fn();
     render(
-      <ExpenseForm groupId={3} participants={participants} onCreated={onCreated} onCancel={vi.fn()} />,
+      <ExpenseForm groupId={3} participants={participants} onSaved={onSaved} onCancel={vi.fn()} />,
     );
 
     await fillRequiredFields(user);
@@ -45,10 +46,10 @@ describe('ExpenseForm', () => {
 
     expect(screen.getByText('Sélectionnez au moins un bénéficiaire')).toBeInTheDocument();
     expect(createExpense).not.toHaveBeenCalled();
-    expect(onCreated).not.toHaveBeenCalled();
+    expect(onSaved).not.toHaveBeenCalled();
   });
 
-  it('appelle onCreated avec la dépense retournée après un succès', async () => {
+  it('appelle onSaved avec la dépense retournée après un succès', async () => {
     const user = userEvent.setup();
     const created: Expense = {
       id: 42,
@@ -63,16 +64,16 @@ describe('ExpenseForm', () => {
       ],
     };
     vi.mocked(createExpense).mockResolvedValueOnce(created);
-    const onCreated = vi.fn();
+    const onSaved = vi.fn();
 
     render(
-      <ExpenseForm groupId={3} participants={participants} onCreated={onCreated} onCancel={vi.fn()} />,
+      <ExpenseForm groupId={3} participants={participants} onSaved={onSaved} onCancel={vi.fn()} />,
     );
 
     await fillRequiredFields(user);
     await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
 
-    expect(onCreated).toHaveBeenCalledWith(created);
+    expect(onSaved).toHaveBeenCalledWith(created);
   });
 
   it('affiche le message de champ sous le bon input en cas de 400 avec fieldErrors', async () => {
@@ -82,7 +83,7 @@ describe('ExpenseForm', () => {
     );
 
     render(
-      <ExpenseForm groupId={3} participants={participants} onCreated={vi.fn()} onCancel={vi.fn()} />,
+      <ExpenseForm groupId={3} participants={participants} onSaved={vi.fn()} onCancel={vi.fn()} />,
     );
 
     await fillRequiredFields(user);
@@ -99,7 +100,7 @@ describe('ExpenseForm', () => {
     vi.mocked(createExpense).mockImplementationOnce(() => new Promise<Expense>(() => {}));
 
     const { container } = render(
-      <ExpenseForm groupId={3} participants={participants} onCreated={vi.fn()} onCancel={vi.fn()} />,
+      <ExpenseForm groupId={3} participants={participants} onSaved={vi.fn()} onCancel={vi.fn()} />,
     );
 
     await fillRequiredFields(user);
@@ -110,5 +111,78 @@ describe('ExpenseForm', () => {
     fireEvent.submit(form);
 
     expect(createExpense).toHaveBeenCalledTimes(1);
+  });
+
+  it('préremplit le formulaire à partir de la dépense fournie en mode édition', () => {
+    const expense: Expense = {
+      id: 7,
+      description: 'Courses',
+      amount: 12.5,
+      expenseDate: '2026-08-20',
+      createdAt: '2026-08-20T10:00:00Z',
+      paidBy: { id: 2, name: 'Bob' },
+      shares: [
+        { participantId: 1, participantName: 'Alice', shareAmount: 6.25 },
+        { participantId: 2, participantName: 'Bob', shareAmount: 6.25 },
+      ],
+    };
+
+    render(
+      <ExpenseForm
+        groupId={3}
+        participants={participants}
+        expense={expense}
+        onSaved={vi.fn()}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByLabelText('Description')).toHaveValue('Courses');
+    expect(screen.getByLabelText('Montant')).toHaveValue(12.5);
+    expect(screen.getByLabelText('Date')).toHaveValue('2026-08-20');
+    expect(screen.getByLabelText('Payeur')).toHaveValue('2');
+    expect(screen.getByLabelText('Alice')).toBeChecked();
+    expect(screen.getByLabelText('Bob')).toBeChecked();
+  });
+
+  it('appelle updateExpense (et non createExpense) en mode édition', async () => {
+    const user = userEvent.setup();
+    const expense: Expense = {
+      id: 7,
+      description: 'Courses',
+      amount: 12.5,
+      expenseDate: '2026-08-20',
+      createdAt: '2026-08-20T10:00:00Z',
+      paidBy: { id: 1, name: 'Alice' },
+      shares: [{ participantId: 1, participantName: 'Alice', shareAmount: 12.5 }],
+    };
+    const updated: Expense = { ...expense, description: 'Courses modifiées' };
+    vi.mocked(updateExpense).mockResolvedValueOnce(updated);
+    const onSaved = vi.fn();
+
+    render(
+      <ExpenseForm
+        groupId={3}
+        participants={participants}
+        expense={expense}
+        onSaved={onSaved}
+        onCancel={vi.fn()}
+      />,
+    );
+
+    const descriptionInput = screen.getByLabelText('Description');
+    await user.clear(descriptionInput);
+    await user.type(descriptionInput, 'Courses modifiées');
+    await user.click(screen.getByRole('button', { name: 'Enregistrer' }));
+
+    expect(updateExpense).toHaveBeenCalledWith(3, 7, {
+      description: 'Courses modifiées',
+      amount: 12.5,
+      expenseDate: '2026-08-20',
+      paidByParticipantId: 1,
+      beneficiaryParticipantIds: [1],
+    });
+    expect(createExpense).not.toHaveBeenCalled();
+    expect(onSaved).toHaveBeenCalledWith(updated);
   });
 });

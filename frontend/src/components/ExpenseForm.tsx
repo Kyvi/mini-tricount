@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { ApiHttpError, createExpense } from '../api/groups';
+import { ApiHttpError, createExpense, updateExpense } from '../api/groups';
 import type { Expense, Participant } from '../types/api';
 
 interface ExpenseFormProps {
   groupId: number;
   participants: Participant[];
-  onCreated: (expense: Expense) => void;
+  expense?: Expense;
+  onSaved: (expense: Expense) => void;
   onCancel: () => void;
 }
 
@@ -30,14 +31,24 @@ function todayIsoDate(): string {
   return `${now.getFullYear()}-${month}-${day}`;
 }
 
-export function ExpenseForm({ groupId, participants, onCreated, onCancel }: ExpenseFormProps) {
-  const [values, setValues] = useState<FormValues>({
-    description: '',
-    amount: '',
-    expenseDate: todayIsoDate(),
-    paidByParticipantId: '',
-    beneficiaryParticipantIds: participants.map((participant) => participant.id),
-  });
+export function ExpenseForm({ groupId, participants, expense, onSaved, onCancel }: ExpenseFormProps) {
+  const [values, setValues] = useState<FormValues>(() =>
+    expense
+      ? {
+          description: expense.description,
+          amount: String(expense.amount),
+          expenseDate: expense.expenseDate,
+          paidByParticipantId: String(expense.paidBy.id),
+          beneficiaryParticipantIds: expense.shares.map((share) => share.participantId),
+        }
+      : {
+          description: '',
+          amount: '',
+          expenseDate: todayIsoDate(),
+          paidByParticipantId: '',
+          beneficiaryParticipantIds: participants.map((participant) => participant.id),
+        },
+  );
   const [submitState, setSubmitState] = useState<SubmitState>({ status: 'idle' });
   const [beneficiariesError, setBeneficiariesError] = useState<string | null>(null);
 
@@ -77,14 +88,15 @@ export function ExpenseForm({ groupId, participants, onCreated, onCancel }: Expe
 
     setSubmitState({ status: 'submitting' });
     try {
-      const expense = await createExpense(groupId, {
+      const payload = {
         description: values.description,
         amount: Number(values.amount),
         expenseDate: values.expenseDate,
         paidByParticipantId: Number(values.paidByParticipantId),
         beneficiaryParticipantIds: values.beneficiaryParticipantIds,
-      });
-      onCreated(expense);
+      };
+      const saved = expense ? await updateExpense(groupId, expense.id, payload) : await createExpense(groupId, payload);
+      onSaved(saved);
     } catch (error: unknown) {
       if (error instanceof ApiHttpError) {
         setSubmitState({ status: 'error', message: error.message, fieldErrors: error.fieldErrors });
