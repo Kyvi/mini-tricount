@@ -44,6 +44,10 @@ export interface CreateParticipantRequest {
   name: string;
 }
 
+export interface CreateGroupRequest {
+  name: string;
+}
+
 export interface ParticipantBalance {
   participantId: number;
   participantName: string;

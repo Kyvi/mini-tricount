@@ -1,6 +1,7 @@
 import type {
   ApiError,
   CreateExpenseRequest,
+  CreateGroupRequest,
   CreateParticipantRequest,
   Expense,
   Group,
@@ -59,6 +60,10 @@ async function apiPut<T>(path: string, payload: unknown): Promise<T> {
     body: JSON.stringify(payload),
   });
 }
+
+export const fetchGroups = () => apiGet<Group[]>('/groups');
+
+export const createGroup = (payload: CreateGroupRequest) => apiPost<Group>('/groups', payload);
 
 export const fetchGroup = (groupId: number) => apiGet<Group>(`/groups/${groupId}`);
 

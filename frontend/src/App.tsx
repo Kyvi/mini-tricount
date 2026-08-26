@@ -1,10 +1,15 @@
+import { useState } from 'react';
+import { GroupSelector } from './components/GroupSelector';
 import { GroupView } from './components/GroupView';
 
-// TODO: remplacer par un routing quand plusieurs groupes/écrans existeront.
-const GROUP_ID = 3;
-
 function App() {
-  return <GroupView groupId={GROUP_ID} />;
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+
+  if (selectedGroupId === null) {
+    return <GroupSelector onSelect={setSelectedGroupId} />;
+  }
+
+  return <GroupView groupId={selectedGroupId} onBack={() => setSelectedGroupId(null)} />;
 }
 
 export default App;
