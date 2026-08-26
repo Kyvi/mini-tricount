@@ -16,6 +16,7 @@ import { SettlementList } from './SettlementList';
 
 interface GroupViewProps {
   groupId: number;
+  onBack?: () => void;
 }
 
 type ViewState =
@@ -38,7 +39,7 @@ type OpenForm =
   | { type: 'create-participant' }
   | { type: 'edit-expense'; expenseId: number };
 
-export function GroupView({ groupId }: GroupViewProps) {
+export function GroupView({ groupId, onBack }: GroupViewProps) {
   const [state, setState] = useState<ViewState>({ status: 'loading' });
   const [openForm, setOpenForm] = useState<OpenForm>({ type: 'none' });
   const financialsRequestId = useRef(0);
@@ -117,6 +118,11 @@ export function GroupView({ groupId }: GroupViewProps) {
 
   return (
     <section className="page">
+      {onBack && (
+        <button type="button" className="btn btn-secondary" onClick={onBack}>
+          ← Retour aux groupes
+        </button>
+      )}
       <h1>{group.name}</h1>
 
       <section className="panel">
